@@ -241,9 +241,11 @@ const QUERIES: Record<string, string> = {
 
   scala: `
 (function_definition name: (identifier) @name) @func
+(function_declaration name: (identifier) @name) @func
 (class_definition name: (identifier) @name) @cls
 (object_definition name: (identifier) @name) @cls
 (trait_definition name: (identifier) @name) @trait_def
+(enum_definition name: (identifier) @name) @enm
 (import_declaration) @imp
 `,
 
@@ -583,10 +585,11 @@ const CONTAINER_KINDS = new Set(["class", "struct", "impl", "trait", "interface"
 // Languages whose query marks the end of a signature with @sig_end captures.
 const SIGNATURE_END_LANGUAGES = new Set(["python", "ruby", "lua"]);
 
-// Kinds that own nested symbols only in some languages: a PHP enum holds its
-// methods, and a Haskell function holds its `where`/`let` helpers.
+// Kinds that own nested symbols only in some languages: a PHP or Scala enum holds
+// its methods, and a Haskell function holds its `where`/`let` helpers.
 const LANGUAGE_CONTAINER_KINDS: Partial<Record<string, ReadonlySet<CodeSymbol["kind"]>>> = {
   php: new Set(["enum"]),
+  scala: new Set(["enum"]),
   haskell: new Set(["function"]),
 };
 
