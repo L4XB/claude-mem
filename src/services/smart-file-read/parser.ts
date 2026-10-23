@@ -202,6 +202,7 @@ const QUERIES: Record<string, string> = {
 (function_declaration (simple_identifier) @name) @func
 (class_declaration (type_identifier) @name) @cls
 (object_declaration (type_identifier) @name) @cls
+(type_alias (type_identifier) @name) @tdef
 (import_header) @imp
 `,
 
