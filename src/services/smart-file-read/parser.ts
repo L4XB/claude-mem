@@ -215,6 +215,7 @@ const QUERIES: Record<string, string> = {
 (class_declaration name: (type_identifier) @name) @cls
 (protocol_declaration name: (type_identifier) @name) @iface
 (import_declaration) @imp
+(typealias_declaration name: (type_identifier) @name) @tdef
 `,
 
   php: `
