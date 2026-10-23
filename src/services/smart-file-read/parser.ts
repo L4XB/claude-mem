@@ -152,7 +152,9 @@ const QUERIES: Record<string, string> = {
   rust: `
 (function_item name: (identifier) @name) @func
 (struct_item name: (type_identifier) @name) @struct_def
+(union_item name: (type_identifier) @name) @struct_def
 (enum_item name: (type_identifier) @name) @enm
+(type_item name: (type_identifier) @name) @tdef
 (trait_item name: (type_identifier) @name) @trait_def
 (impl_item type: (_) @name) @impl_def
 (use_declaration) @imp
