@@ -190,6 +190,7 @@ const QUERIES: Record<string, string> = {
 (function_definition) @func
 (function_declarator declarator: [(identifier) (field_identifier) (qualified_identifier) (destructor_name) (operator_name)] @function_name)
 (type_definition type: (_) @aliased_type declarator: (type_identifier) @name) @tdef
+(alias_declaration name: (type_identifier) @name) @tdef
 (class_specifier name: (type_identifier) @name body: (field_declaration_list)) @cls
 (struct_specifier name: (type_identifier) @name body: (field_declaration_list)) @struct_def
 (enum_specifier name: (type_identifier) @name body: (enumerator_list)) @enm
