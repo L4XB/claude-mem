@@ -71,7 +71,7 @@ interface ObservationRow {
 
 function deduplicateObservations(
   observations: ObservationRow[],
-  targetPath: string,
+  targetPaths: string[],
   displayLimit: number
 ): ObservationRow[] {
   const seenSessions = new Set<string>();
@@ -84,12 +84,12 @@ function deduplicateObservations(
     }
   }
 
+  const normalizedTargets = new Set(targetPaths.map(target => target.replace(/\\/g, '/')));
   const scored = dedupedBySession.map(obs => {
     const filesRead = parseJsonArray(obs.files_read);
     const filesModified = parseJsonArray(obs.files_modified);
     const totalFiles = filesRead.length + filesModified.length;
-    const normalizedTarget = targetPath.replace(/\\/g, '/');
-    const inModified = filesModified.some(f => f.replace(/\\/g, '/') === normalizedTarget);
+    const inModified = filesModified.some(f => normalizedTargets.has(f.replace(/\\/g, '/')));
 
     let specificityScore = 0;
     if (inModified) specificityScore += 2;
@@ -520,7 +520,7 @@ async function lookupFileObservationHistory(
   // Never empty: the `observations.length === 0` guard above already returned,
   // and deduplicateObservations only ever drops same-session duplicates and
   // truncates to DISPLAY_LIMIT, so at least one row always survives.
-  const displayedObservations = deduplicateObservations(data.observations, relativePath, DISPLAY_LIMIT)
+  const displayedObservations = deduplicateObservations(data.observations, candidateQueryPaths, DISPLAY_LIMIT)
     .sort((a, b) => a.created_at_epoch - b.created_at_epoch);
 
   return { filePath, absolutePath, relativePath, newestObservationMs, displayedObservations, fileStatVerified, fileSizeBytes };
