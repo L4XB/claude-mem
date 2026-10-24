@@ -17,6 +17,26 @@ function hashContent(content: string): string {
   return createHash("sha256").update(content).digest("hex").slice(0, 16);
 }
 
+/**
+ * Re-points relative links of a document written to `toDir` instead of `fromDir`,
+ * e.g. `LICENSE` becomes `../../LICENSE` for a README translated into docs/i18n.
+ */
+export function rebaseRelativeLinks(markdown: string, fromDir: string, toDir: string): string {
+  const rebase = (target: string): string => {
+    if (/^(?:[a-z][a-z0-9+.-]*:|[#/])/i.test(target)) {
+      return target;
+    }
+    const suffixStart = target.search(/[?#]/);
+    const filePart = suffixStart === -1 ? target : target.slice(0, suffixStart);
+    const suffix = suffixStart === -1 ? "" : target.slice(suffixStart);
+    const rebased = path.relative(toDir, path.resolve(fromDir, filePart)).split(path.sep).join("/") || ".";
+    return rebased + (filePart.endsWith("/") ? "/" : "") + suffix;
+  };
+  return markdown
+    .replace(/(\]\()([^)\s]+)/g, (_match, open: string, target: string) => open + rebase(target))
+    .replace(/(\s(?:href|src)=")([^"]+)"/g, (_match, open: string, target: string) => `${open}${rebase(target)}"`);
+}
+
 async function readCache(cachePath: string): Promise<TranslationCache | null> {
   try {
     const data = await fs.readFile(cachePath, "utf-8");
@@ -311,7 +331,7 @@ export async function translateReadme(
         existingTranslation,
       });
 
-      await fs.writeFile(outputPath, translation, "utf-8");
+      await fs.writeFile(outputPath, rebaseRelativeLinks(translation, path.dirname(sourcePath), outDir), "utf-8");
 
       if (verbose) {
         console.log(`   ✅ Saved to ${outputFilename} ($${costUsd.toFixed(4)})`);
