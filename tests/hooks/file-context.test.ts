@@ -694,6 +694,49 @@ describe('fileContextHandler — #2094 (no Read mutation)', () => {
     expect(second.continue).toBe(true);
     expect(second.hookSpecificOutput).toBeUndefined();
   });
+
+  it('ranks sessions that edited the file by its absolute path above read-only sessions', async () => {
+    // Claude Code's Edit/Write file_path is absolute, and files_modified stores it as given.
+    const future = Date.now() + 60_000;
+    const readOnly = Array.from({ length: 5 }, (_, i) => ({
+      id: 100 + i,
+      memory_session_id: `read-session-${i}`,
+      title: `Read-only session ${String(i).padStart(2, '0')}`,
+      type: 'discovery',
+      created_at_epoch: future - i,
+      files_read: JSON.stringify([testFile, join(tmpDir, 'notes.md')]),
+      files_modified: JSON.stringify([]),
+    }));
+    const edits = Array.from({ length: 15 }, (_, i) => ({
+      id: 200 + i,
+      memory_session_id: `edit-session-${i}`,
+      title: `Edit session ${String(i).padStart(2, '0')}`,
+      type: 'change',
+      created_at_epoch: future - 100 - i,
+      files_read: JSON.stringify(['a.ts', 'b.ts', 'c.ts', 'd.ts', 'e.ts'].map(name => join(tmpDir, name))),
+      files_modified: JSON.stringify([testFile]),
+    }));
+    const observations = [...readOnly, ...edits];
+    fetchSpy = spyOn(globalThis, 'fetch').mockImplementation(() =>
+      Promise.resolve(new Response(
+        JSON.stringify({ observations, count: observations.length }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      )),
+    );
+
+    const result = await fileContextHandler.execute({
+      sessionId: 'sess',
+      cwd: tmpDir,
+      toolName: 'Read',
+      toolInput: { file_path: testFile },
+    });
+
+    const ctx = result.hookSpecificOutput!.additionalContext as string;
+    for (const edit of edits) {
+      expect(ctx).toContain(edit.title);
+    }
+    expect(ctx).not.toContain('Read-only session');
+  });
 });
 
 describe('fileContextHandler — #4558 (server runtime)', () => {
