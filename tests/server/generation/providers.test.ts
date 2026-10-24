@@ -244,6 +244,15 @@ describe('buildServerGenerationPrompt', () => {
     expect(prompt).not.toContain('&quot;');
   });
 
+  it('truncates a long payload without cutting an emoji in half', () => {
+    // The emoji's high surrogate sits at the cut; a lone surrogate makes the Anthropic
+    // API reject the request with "no low surrogate in string".
+    const payload = `${'x'.repeat(16 * 1024 - 1)}\u{1F680} after the cut`;
+    const { prompt } = buildServerGenerationPrompt(makeContext({ payload }));
+    expect(prompt).toContain('[...truncated]');
+    expect(prompt).not.toMatch(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/);
+  });
+
   it('sends the folder label but none of the ids the model never needs', () => {
     const result = buildServerGenerationPrompt(makeContext({ serverSessionId: 'session-x' }));
     expect(result.prompt).toContain('<project_name>demo</project_name>');
